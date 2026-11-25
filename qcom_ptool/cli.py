@@ -8,12 +8,9 @@ import sys
 from qcom_ptool import __version__
 
 SUBCOMMANDS = {
-    "gen_partition": "qcom_ptool.gen_partition",
     "build": "qcom_ptool.build",
-    "gen_contents": "qcom_ptool.gen_contents",
-    "gen_udev_rules": "qcom_ptool.gen_udev_rules",
-    "ptool": "qcom_ptool.ptool",
     "show": "qcom_ptool.show",
+    "gen_udev_rules": "qcom_ptool.gen_udev_rules",
 }
 
 
