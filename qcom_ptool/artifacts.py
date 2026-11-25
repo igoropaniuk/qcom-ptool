@@ -3,8 +3,8 @@
 """
 GPT and flashing artifacts of one storage.
 
-Every LUN with partitions gets its GPT images (``gpt_main/backup/both/
-empty``) and firehose XML (``rawprogram``, ``patch`` and the wipe and
+Every LUN with partitions gets its GPT images (``gpt_main/backup/empty``)
+and firehose XML (``rawprogram``, ``patch`` and the wipe and
 blank-GPT variants), numbered by its position among those LUNs; the
 storage gets the zero-filled images the wipe files write and
 ``wipe_rawprogram_PHYn.xml``.
@@ -60,7 +60,6 @@ def write_storage(
         tables = build_tables(placements, geom, rng)
         _write(outdir, "gpt_main%d.bin" % lun, tables.primary)
         _write(outdir, "gpt_backup%d.bin" % lun, tables.backup)
-        _write(outdir, "gpt_both%d.bin" % lun, tables.primary + tables.backup)
         _write(outdir, "gpt_empty%d.bin" % lun, tables.empty)
         for name, root in firehose.lun_documents(placements, geom, lun, tables.num_entries).items():
             _write(outdir, name, root)
