@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "qcom-ptool"
 version = "1.0.0"
-description = "Qualcomm partition tool - GPT partition table generator and mass storage programmer"
+description = "Qualcomm partition tool - GPT partition table and flashing artifact generator"
 readme = "README.md"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
@@ -71,7 +71,7 @@ check_untyped_defs = true
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["qcom_ptool.msp", "qcom_ptool.ptool"]
+module = ["qcom_ptool.ptool"]
 # Legacy scripts - enable gradually
 check_untyped_defs = false
 

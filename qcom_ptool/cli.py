@@ -13,7 +13,6 @@ SUBCOMMANDS = {
     "gen_contents": "qcom_ptool.gen_contents",
     "gen_udev_rules": "qcom_ptool.gen_udev_rules",
     "ptool": "qcom_ptool.ptool",
-    "msp": "qcom_ptool.msp",
     "show": "qcom_ptool.show",
 }
 
@@ -22,8 +21,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="qcom-ptool",
         description=(
-            "Qualcomm partition tool - GPT partition table generator and "
-            "mass storage programmer."
+            "Qualcomm partition tool - GPT partition table and flashing "
+            "artifact generator."
         ),
         epilog=(
             "Run 'qcom-ptool <subcommand> -h' to see the options accepted by "

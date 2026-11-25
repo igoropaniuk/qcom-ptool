@@ -23,7 +23,6 @@ qcom-ptool show          --platform platforms/<platform>.yaml
 qcom-ptool gen_partition --platform platforms/<platform>.yaml -C out/
 qcom-ptool gen_contents  [-o out/] platforms/<platform>.yaml
 qcom-ptool gen_udev_rules -o 55-qcom-raw-partitions-noblkid.rules
-qcom-ptool msp           -r rawprogram0.xml -d /dev/sdX -p patch0.xml
 ```
 
 ## Boards, flavors and platforms
