@@ -1,0 +1,164 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause
+
+"""Generate udev rules for Qualcomm raw partitions."""
+
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+from collections.abc import Mapping
+from pathlib import Path
+
+import yaml  # type: ignore[import-untyped]
+
+from qcom_ptool.board import config_to_specs, resolve_file
+from qcom_ptool.loaders import load as load_spec
+from qcom_ptool.spec import LoadedSpec
+
+DATA_DIR = Path(__file__).with_name("data")
+FILESYSTEM_NAMES_FILE = DATA_DIR / "filesystem-partition-names.list"
+TEMPLATE_FILE = DATA_DIR / "55-qcom-raw-partitions-noblkid.rules.in"
+RULES_PLACEHOLDER = "@QCOM_RAW_PARTITION_RULES@"
+RULES_FILE = "55-qcom-raw-partitions-noblkid.rules"
+NAME = "gen_udev_rules"
+NAME_RE = re.compile(r"[A-Za-z0-9_.+-]+")
+
+
+def load_filesystem_names() -> set[str]:
+    """Load names of partitions that may contain filesystems."""
+    names: set[str] = set()
+    for line_number, line in enumerate(
+        FILESYSTEM_NAMES_FILE.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        name = line.partition("#")[0].strip()
+        if not name:
+            continue
+        if NAME_RE.fullmatch(name) is None:
+            raise ValueError(
+                f"{FILESYSTEM_NAMES_FILE}:{line_number}: invalid name: {name}"
+            )
+        if name in names:
+            raise ValueError(
+                f"{FILESYSTEM_NAMES_FILE}:{line_number}: duplicate name: {name}"
+            )
+        names.add(name)
+
+    if not names:
+        raise ValueError(f"filesystem name list is empty: {FILESYSTEM_NAMES_FILE}")
+    return names
+
+
+def _read_yaml_mapping(path: Path) -> Mapping[str, object] | None:
+    """Return the file's top-level YAML mapping, or None for other documents."""
+    with open(path, encoding="utf-8") as f:
+        try:
+            document = yaml.safe_load(f)
+        except yaml.YAMLError as error:
+            raise ValueError(f"{path}: {error}") from error
+    return document if isinstance(document, Mapping) else None
+
+
+def layout_specs(path: Path) -> list[LoadedSpec]:
+    """Load every partition spec described by one layout file.
+
+    A YAML platform file resolves to one spec per flashed storage of each
+    configuration, a self-contained YAML board to one per flashed storage;
+    a flat partitions YAML is a single spec via the format loaders.
+    """
+    if path.suffix.lower() in (".yaml", ".yml"):
+        document = _read_yaml_mapping(path)
+        if document is not None and ("board" in document or "storage" in document):
+            return [
+                spec
+                for config in resolve_file(str(path))
+                for _storage, spec in config_to_specs(config)
+            ]
+    return [load_spec(str(path))]
+
+
+def load_partition_names(inputs: list[Path]) -> set[str]:
+    """Load and merge partition names from all supplied layouts."""
+    names: set[str] = set()
+    for path in inputs:
+        for spec in layout_specs(path):
+            for partitions in spec["partitions"].values():
+                for partition in partitions:
+                    name = partition["label"]
+                    if name and name != "last_parti":
+                        if NAME_RE.fullmatch(name) is None:
+                            raise ValueError(f"{path}: invalid partition name: {name}")
+                        names.add(name)
+    return names
+
+
+def load_raw_partition_names(inputs: list[Path]) -> list[str]:
+    """Return known raw partition names from the supplied layouts."""
+    return sorted(load_partition_names(inputs) - load_filesystem_names())
+
+
+def discover_inputs(paths: list[Path]) -> list[Path]:
+    """Expand directories to the layouts (``*.yaml``) directly inside them."""
+    layouts: list[Path] = []
+    for path in paths:
+        if path.is_dir():
+            found = sorted(path.glob("*.yaml"))
+            if not found:
+                raise ValueError(f"{path}: no *.yaml layouts in this directory")
+            layouts += found
+        else:
+            layouts.append(path)
+    if not layouts:
+        raise ValueError("no partition layouts given")
+    return layouts
+
+
+def render_rules(names: list[str]) -> str:
+    """Render the udev rules template for the supplied partition names."""
+    rules = "\n".join(
+        f'ENV{{PARTNAME}}=="{name}", GOTO="qcom_raw_noblkid"'
+        for name in names
+    )
+    template = TEMPLATE_FILE.read_text(encoding="utf-8")
+    if template.count(RULES_PLACEHOLDER) != 1:
+        raise ValueError("rules template must contain exactly one placeholder")
+    return template.replace(RULES_PLACEHOLDER, rules)
+
+
+def generate_rules(paths: list[Path]) -> str:
+    """Render rules for raw partitions in all supplied layouts."""
+    return render_rules(load_raw_partition_names(discover_inputs(paths)))
+
+
+def register(subparsers: argparse._SubParsersAction) -> None:
+    parser = subparsers.add_parser(NAME, help="generate udev rules for raw partitions",
+                                   description=__doc__)
+    parser.add_argument(
+        "paths",
+        nargs="+",
+        type=Path,
+        metavar="PATH",
+        help="platform, self-contained board or partitions .yaml to scan, or a "
+        "directory whose *.yaml files are scanned (e.g. platforms/)",
+    )
+    parser.add_argument(
+        "-o", "--output", type=Path, default=Path(RULES_FILE),
+        help=f"rules file to write (default: {RULES_FILE})",
+    )
+    parser.set_defaults(run=run)
+
+
+def run(args: argparse.Namespace) -> int:
+    try:
+        content = generate_rules(args.paths)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        # newline="\n": the rules file is byte-identical on every host.
+        with open(args.output, "w", encoding="utf-8", newline="\n") as f:
+            f.write(content)
+    except (OSError, ValueError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+
+    print(f"generated: {args.output}")
+    return 0

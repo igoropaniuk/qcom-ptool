@@ -1,0 +1,28 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause
+storage:
+  - id: spinor
+    type: spinor
+    size: 33554432               # 32 MiB
+    sector-size: 4096
+    write-protect-boundary: 4
+  - id: ufs
+    type: ufs
+    size: 137438953472           # 128 GiB
+    sector-size: 4096
+    write-protect-boundary: 0
+
+# SoC part of contents.xml: chip identity and boot-chain firmware.
+contents:
+  chip: NORD
+  additional-chipids: [SA8797P, QAM8797P]
+  common:
+    - device-programmer: {file: qsahara_device_programmer.xml, attributes: {cmm_file_var: "FIREHOSE_DDR_ELF"}}
+    - download: {file: tme_config.elf, attributes: {qsahara_image_id: "61"}}
+    - download: {file: signed_firmware_soc_view.elf, attributes: {qsahara_image_id: "60"}}
+    - download: {file: sequencer_ram.elf, attributes: {qsahara_image_id: "59"}}
+    - download: {file: xbl_sc.elf, attributes: {qsahara_image_id: "21"}}
+    - download: {file: qti_misc.mbn, attributes: {qsahara_image_id: "36"}}
+    - download: {file: oem_misc.mbn, attributes: {qsahara_image_id: "37"}}
+    - device-programmer: {file: device_programmer_ddr.elf, attributes: {cmm_file_var: "DEV_PRG", qsahara_image_id: "13"}}
+    - device-programmer: {file: xbl_config_devprg.elf, attributes: {cmm_file_var: "XBL_CFG", qsahara_image_id: "38"}}

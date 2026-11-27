@@ -1,0 +1,26 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause
+storage:
+  - id: nvme
+    type: nvme
+    size: 68719476736            # 64 GiB
+    sector-size: 512
+    write-protect-boundary: 65536
+  - id: spinor
+    type: spinor
+    size: 67108864               # 64 MiB
+    sector-size: 4096
+    write-protect-boundary: 0
+  - id: ufs
+    type: ufs
+    size: 76841669632            # 75040693 KiB
+    sector-size: 4096
+    write-protect-boundary: 0
+
+# SoC part of contents.xml: chip identity and boot-chain firmware.
+contents:
+  chip: HAMOA
+  chipset: QX8141
+  additional-chipids: [HAMOA, Hamoa_IOT, Purwa_IoT, IQX7181, IQX5121MD]
+  common:
+    - device-programmer: {file: xbl_s_devprg_ns.melf}

@@ -1,0 +1,8 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause
+storage:
+  - id: ufs
+    type: ufs
+    size: 137438953472           # 128 GiB
+    sector-size: 4096
+    write-protect-boundary: 0

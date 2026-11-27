@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qcom-ptool"
+version = "1.0.0"
+description = "Qualcomm partition tool - GPT partition table and flashing artifact generator"
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+requires-python = ">=3.8"
+dependencies = [
+    "PyYAML>=5.1",
+    "jsonschema>=3.2",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+# Development tools (lint, tests), pinned in uv.lock.
+[dependency-groups]
+dev = [
+    "mypy<2",  # mypy 2.x flags new errors; bump separately
+    "pytest",
+    "ruff",
+    "types-PyYAML",
+]
+
+[project.scripts]
+qcom-ptool = "qcom_ptool.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["qcom_ptool*"]
+
+[tool.setuptools.package-data]
+"qcom_ptool.schema" = ["*.json"]
+"qcom_ptool.data" = ["*.in", "*.list"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "F",     # pyflakes
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "I",     # isort (replaces standalone isort)
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "RUF",   # ruff-specific rules
+]
+ignore = [
+    "E501",  # line too long - existing code exceeds limits extensively
+    "UP031", # %-format strings - pervasive in existing code, convert incrementally
+    "UP034", # extraneous parentheses - minor style issue
+    "SIM115", # use context manager for open() - would require restructuring legacy code
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["qcom_ptool"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = false
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+# Allow running `pytest` from the repo root without requiring an editable
+# install of the package; tests under tests/unit/ import qcom_ptool directly
+# from the source tree.
+pythonpath = ["."]
+testpaths = ["tests/unit"]
