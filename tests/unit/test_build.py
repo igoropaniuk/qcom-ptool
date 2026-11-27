@@ -21,7 +21,7 @@ PLATFORMS = REPO_ROOT / "platforms"
 
 def _artifacts(outdir: Path) -> dict[str, bytes]:
     return {
-        str(p.relative_to(outdir)): p.read_bytes()
+        p.relative_to(outdir).as_posix(): p.read_bytes()
         for p in sorted(outdir.rglob("*"))
         if p.is_file()
     }

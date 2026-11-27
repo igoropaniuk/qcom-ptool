@@ -153,7 +153,9 @@ def run(args: argparse.Namespace) -> int:
     try:
         content = generate_rules(args.paths)
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(content, encoding="utf-8")
+        # newline="\n": the rules file is byte-identical on every host.
+        with open(args.output, "w", encoding="utf-8", newline="\n") as f:
+            f.write(content)
     except (OSError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2

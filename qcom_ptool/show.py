@@ -43,7 +43,8 @@ def output_paths(targets: list[tuple[str, Configuration]], outdir: str) -> list[
         pair = contents_paths(config)
         if pair is not None:
             paths.append(os.path.join(base, pair[0]))
-    return paths
+    # Forward slashes on every host: the list is read by scripts and make.
+    return [path.replace(os.sep, "/") for path in paths]
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:

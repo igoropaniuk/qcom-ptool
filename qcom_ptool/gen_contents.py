@@ -22,7 +22,9 @@ def RebaseFilePaths(ContentsRoot, StorageDir, OutputXml):
     if rel == ".":
         return
     for element in ContentsRoot.iter("file_path"):
-        element.text = os.path.normpath(os.path.join(rel, element.text or "."))
+        # contents.xml always uses forward slashes, whatever the host.
+        path = os.path.normpath(os.path.join(rel, element.text or "."))
+        element.text = path.replace(os.sep, "/")
 
 
 def layout_files(spec: LoadedSpec) -> tuple[list[dict[str, str]], int]:
@@ -121,9 +123,12 @@ def WriteContents(xml_root, output_xml):
     """Indent and write one generated contents tree."""
     OutputTree = ET.ElementTree(xml_root)
     ET.indent(OutputTree, space="\t", level=0)
-    OutputTree.write(
-        output_xml, encoding="utf-8", xml_declaration=True, short_empty_elements=False
-    )
+    # Given a path, ElementTree opens it in text mode and writes the host's
+    # line endings; a binary file keeps LF everywhere.
+    with open(output_xml, "wb") as f:
+        OutputTree.write(
+            f, encoding="utf-8", xml_declaration=True, short_empty_elements=False
+        )
 
 
 def generate_configuration(config, config_dir, build_id, image_map=None):
