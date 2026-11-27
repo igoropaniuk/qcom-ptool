@@ -168,6 +168,12 @@ versions pinned in `uv.lock`.
 Generated files go to `platforms/out/`; pass `OUT=<dir>` to build
 elsewhere.
 
+The Makefile needs GNU make 4.3 or newer and a POSIX shell with
+`sha256sum`. Linux distributions provide them; on macOS install them with
+`brew install make coreutils` and put their `gnubin` directories on
+`PATH`; on Windows run `make` from an [MSYS2](https://www.msys2.org/)
+shell. CI builds and checks every platform on all three.
+
 ### Quick start
 
 ```sh
@@ -177,7 +183,7 @@ make check-dev
 # partition tables: build all platforms and verify the generated files
 make check-partitions
 
-# without make (e.g. on Windows), call the tools through uv directly
+# without make, call the tools through uv directly
 uv run pytest
 uv run --no-dev qcom-ptool build platforms/<platform>.yaml
 ```

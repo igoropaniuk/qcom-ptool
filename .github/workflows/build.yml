@@ -8,7 +8,20 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, shell: bash }
+          - { os: macos-latest, shell: bash }
+          - { os: windows-latest, shell: 'msys2 {0}' }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    env:
+      PTOOL_SEED: qcom-ptool-ci
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,16 +30,31 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
 
+      # macOS ships GNU make 3.81, which lacks the grouped targets the
+      # Makefile uses, and has no GNU sha256sum.
+      - name: Install GNU make and coreutils (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install make coreutils
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix coreutils)/libexec/gnubin" >> "$GITHUB_PATH"
+
+      # make and the POSIX tools come from MSYS2; uv is the native Windows
+      # one, inherited from PATH.
+      - name: Set up MSYS2 (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0
+        with:
+          msystem: MINGW64
+          path-type: inherit
+          install: make
+
       - name: Build all platforms and run tests
-        env:
-          PTOOL_SEED: qcom-ptool-ci
         run: |
           make check-dev
           make check-partitions check-checksums
 
       - name: Verify checksum manifest is up to date
-        env:
-          PTOOL_SEED: qcom-ptool-ci
         run: |
           make generate-checksums
           if ! git diff --exit-code tests/integration/checksums.sha256; then

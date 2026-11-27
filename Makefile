@@ -76,9 +76,11 @@ check-checksums: all
 generate-checksums: all
 	# regenerate tests/integration/checksums.sha256 from current artifacts
 	# (run with the same PTOOL_SEED that CI uses, otherwise the manifest
-	# will not match CI builds)
+	# will not match CI builds); sed drops the binary-mode marker that
+	# sha256sum adds on Windows, so the manifest is the same on every host
 	LC_ALL=C find $(OUT) -type f \( -name '*.bin' -o -name '*.xml' -o -name '*.rules' \) \
 	  -print0 | LC_ALL=C sort -z | xargs -0 sha256sum \
+	  | sed 's/^\([0-9a-f]*\) \*/\1  /' \
 	  > tests/integration/checksums.sha256
 
 # qcom-ptool development: lint and unit tests.
